@@ -3,6 +3,8 @@
         {
             "url": "https://www.njtransit.com/",
             "file": "rail_data.zip",
+            "destDirectory": "data/NJTRANSIT/",
+            "destFile": "rail_data.zip",
             "request":{
                 "method": "GET",
                 "params": {},
@@ -15,6 +17,8 @@
         {
             "url": "https://www.njtransit.com/",
             "file": "bus_data.zip",
+            "destDirectory": "data/NJTRANSIT/",
+            "destFile": "bus_data.zip",
             "request":{
                 "method": "GET",
                 "params": {},
