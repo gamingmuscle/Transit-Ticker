@@ -1,6 +1,7 @@
 {
     "ingress":[
         {
+            "authority": "NJTRANSIT",
             "url": "https://www.njtransit.com/",
             "file": "rail_data.zip",
             "destDirectory": "data/NJTRANSIT/",
@@ -15,6 +16,7 @@
             }
         },
         {
+            "authority": "NJTRANSIT",
             "url": "https://www.njtransit.com/",
             "file": "bus_data.zip",
             "destDirectory": "data/NJTRANSIT/",

@@ -1,0 +1,73 @@
+{
+    "ingress":[
+        {
+            "authority": "NJTRANSIT",
+            "url": "https://testraildata.njtransit.com/api/GTFSRT/",
+            "authentication":
+            {
+                "token": "getToken",
+                "checkToken": "isValidToken",
+                "tokenExpiry": 24,
+                "request":
+                {
+                    "method": "POST",
+                    "params": {},
+                    "username": "tschlund",
+                    "password": "t-M3t@l2",
+                    "headers": {
+                        "accept": "text/plain"
+                    }
+                }
+            },
+            "data": [
+                {
+                    "endpoint": "getAlerts",
+                    "format": "proto",
+                    "destDirectory": "data/protos/NJTRANSIT/",
+                    "destFile": "Alerts",
+                    "class":"FeedMessage",
+                    "request":{
+                        "method": "POST",
+                        "params": {},
+                        "payload":null,
+                        "headers": {
+                            "accept": "*/*"
+                        }
+                    }
+                },
+                {
+                    "endpoint": "getTripUpdates",
+                    "format": "proto",
+                    "class":"FeedMessage",
+                    "destDirectory": "data/protos/NJTRANSIT/",
+                    "destFile": "TripUpdates",
+                    "request":{
+                        "method": "POST",
+                        "params": {},
+                        "payload":null,
+                        "headers": {
+                            "accept": "*/*"
+                        }
+                    }
+                },
+                {
+                    "endpoint": "getVehiclePositions",
+                    "format": "proto",
+                    "class":"FeedMessage",
+                    "destDirectory": "data/protos/NJTRANSIT/",
+                    "destFile": "VehiclePositions",
+                    "request":{
+                        "method": "POST",
+                        "params": {},
+                        "payload":null,
+                        "headers": {
+                            "accept": "*/*"
+                        }
+                    }
+                }
+                
+                
+            ]
+        }  
+    ]
+}
