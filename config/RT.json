@@ -25,7 +25,7 @@
                     "format": "proto",
                     "destDirectory": "data/protos/NJTRANSIT/",
                     "destFile": "Alerts",
-                    "class":"FeedMessage",
+                    "entity":"Alert",
                     "request":{
                         "method": "POST",
                         "params": {},
@@ -38,7 +38,7 @@
                 {
                     "endpoint": "getTripUpdates",
                     "format": "proto",
-                    "class":"FeedMessage",
+                    "entity":"TripUpdate",
                     "destDirectory": "data/protos/NJTRANSIT/",
                     "destFile": "TripUpdates",
                     "request":{
@@ -53,7 +53,7 @@
                 {
                     "endpoint": "getVehiclePositions",
                     "format": "proto",
-                    "class":"FeedMessage",
+                    "entity":"vehicle",
                     "destDirectory": "data/protos/NJTRANSIT/",
                     "destFile": "VehiclePositions",
                     "request":{
@@ -65,8 +65,6 @@
                         }
                     }
                 }
-                
-                
             ]
         }  
     ]

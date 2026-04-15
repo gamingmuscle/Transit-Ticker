@@ -1,8 +1,22 @@
 create database if not exists transit_ticker;
 use transit_ticker;
 
+
+drop table if exists agency;
+CREATE TABLE agency (
+    agency_id VARCHAR(64) PRIMARY KEY,
+    agency_name VARCHAR(255) NOT NULL,
+    agency_url VARCHAR(255) NOT NULL,
+    agency_timezone VARCHAR(64) NOT NULL,
+    agency_lang VARCHAR(16),
+    agency_phone VARCHAR(64),
+    agency_fare_url VARCHAR(255),
+    agency_email VARCHAR(255)
+);
+
 drop table if exists stops;
 CREATE TABLE stops (
+    agency_id varchar(64),
     stop_id VARCHAR(64) PRIMARY KEY,
     stop_code VARCHAR(64),
     stop_name VARCHAR(255) NOT NULL,
@@ -14,12 +28,13 @@ CREATE TABLE stops (
     location_type TINYINT,
     parent_station VARCHAR(64),
     wheelchair_boarding TINYINT,
-    platform_code VARCHAR(64)
+    platform_code VARCHAR(64),
+    foreign key (agency_id) references agency(agency_id)
 );
 
 drop table if exists routes;
 CREATE TABLE routes (
-    route_id VARCHAR(64) PRIMARY KEY,
+    route_id VARCHAR(64),
     agency_id VARCHAR(64),
     route_short_name VARCHAR(64),
     route_long_name VARCHAR(255),
@@ -28,6 +43,7 @@ CREATE TABLE routes (
     route_url VARCHAR(255),
     route_color CHAR(6),
     route_text_color CHAR(6),
+    primary key (route_id,agency_id),
     foreign key (agency_id) references agency(agency_id)
 );
 
@@ -68,6 +84,48 @@ CREATE TABLE trips (
     foreign key (route_id) references routes(route_id)
 );
 
+drop table if exists vehicle_positions;
+CREATE TABLE vehicle_positions (
+    entity_id VARCHAR(64) PRIMARY KEY,
+    vehicle_id VARCHAR(64),
+    trip_id VARCHAR(64),
+    route_id VARCHAR(64),
+    direction_id TINYINT,
+    start_time VARCHAR(16),
+    start_date CHAR(8),
+
+    latitude DOUBLE,
+    longitude DOUBLE,
+    bearing DOUBLE,
+    speed DOUBLE,
+
+    current_stop_sequence INT,
+    current_status VARCHAR(32),
+    stop_id VARCHAR(64),
+
+    timestamp BIGINT,
+    congestion_level VARCHAR(32),
+    occupancy_status VARCHAR(32),
+
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+drop table if exists trip_updates;
+CREATE TABLE trip_updates (
+    entity_id VARCHAR(64) PRIMARY KEY,
+    trip_id VARCHAR(64),
+    route_id VARCHAR(64),
+    direction_id TINYINT,
+    start_time VARCHAR(16),
+    start_date CHAR(8),
+
+    vehicle_id VARCHAR(64),
+    timestamp BIGINT,
+
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+
 drop table if exists stop_times;
 CREATE TABLE stop_times (
     trip_id VARCHAR(64) NOT NULL,
@@ -96,17 +154,6 @@ CREATE TABLE shapes (
     PRIMARY KEY (shape_id, shape_pt_sequence)
 );
 
-drop table if exists agency;
-CREATE TABLE agency (
-    agency_id VARCHAR(64) PRIMARY KEY,
-    agency_name VARCHAR(255) NOT NULL,
-    agency_url VARCHAR(255) NOT NULL,
-    agency_timezone VARCHAR(64) NOT NULL,
-    agency_lang VARCHAR(16),
-    agency_phone VARCHAR(64),
-    agency_fare_url VARCHAR(255),
-    agency_email VARCHAR(255)
-);
 
 CREATE INDEX idx_stop_times_trip ON stop_times (trip_id);
 CREATE INDEX idx_stop_times_stop ON stop_times (stop_id);

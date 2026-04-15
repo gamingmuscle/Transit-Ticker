@@ -35,13 +35,17 @@ def run():
                 print(f"[DEBUG] Valid token found for authority: {entry['authority']} - Token: {token}")
         for data_entry in entry["data"]:
             data=req.download_rt_file(entry["url"], data_entry, token["UserToken"])
+            if not data:
+                print(f"[ERROR] Failed to download RT data for: {data_entry['endpoint']}")
+                #continue
+                return
             ph = ProtoHandler()
-            
-            module = ph.loadProtoClass(data_entry["class"], "../objects/protos/")
+
+            module = ph.loadProtoClass("FeedMessage", "../objects/protos/")
             if not module:
                 print(f"[ERROR] Failed to load protobuf class: {data_entry['class']} from {data_entry['destDirectory']}")
                 continue
-            parsed = ph.ParseProto(module, data_entry["class"], data)
+            parsed = ph.ParseProto(module, "FeedMessage", data)
             print(f"[DEBUG] Parsed data for authority: {entry['authority']} - Data: {parsed}")
 
 def validateToken(req: RequestHandler, token: dict, entry: dict) -> bool:

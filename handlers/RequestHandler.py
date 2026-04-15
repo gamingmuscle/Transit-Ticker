@@ -5,13 +5,16 @@ from pathlib import Path
 
 
 class RequestHandler:
+    def __init__(self):
+        self.session = requests.Session()
+
     def download_file(self, entry: dict) -> bool:
         try:
             url = entry["url"] + entry["file"]
             outdir = Path(f"../{entry['destDirectory']}")
             outdir.mkdir(parents=True, exist_ok=True)
             print(f"[DEBUG] Downloading from URL: {url}")
-            r = requests.request(
+            r = self.session.request(
                 entry["request"]["method"],
                 url,
                 params=entry["request"]["params"],
@@ -33,7 +36,7 @@ class RequestHandler:
         try:
             url = entry["url"] + entry["authentication"]["token"]
             print(f"[DEBUG] Downloading from URL: {url}")
-            r = requests.request(
+            r = self.session.request(
                 entry["authentication"]["request"]["method"],
                 url,
                 files={
@@ -64,7 +67,7 @@ class RequestHandler:
         else:
             url = entry["url"] + entry["authentication"]["checkToken"]
             print(f"[DEBUG] Loaded token for authority: {url} - {token['UserToken']}")
-            r = requests.request(
+            r = self.session.request(
                 entry["authentication"]["request"]["method"],
                 url,
                 files={"token": (None, token["UserToken"])},
@@ -91,11 +94,12 @@ class RequestHandler:
             outdir.mkdir(parents=True, exist_ok=True)
             print(f"[DEBUG] Downloading from URL: {url}")
             
-            r = requests.request(
+            r = self.session.request(
                 entry["request"]["method"],
                 url,
                 files={"token": (None, token)},
                 headers=entry["request"]["headers"],
+                allow_redirects=False,
             )
             r.raise_for_status()
             with open(f"{outdir}/{entry['destFile']}.{entry["format"]}", "wb") as f:
