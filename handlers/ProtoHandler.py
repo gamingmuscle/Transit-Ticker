@@ -43,3 +43,8 @@ class ProtoHandler:
         msg = cls()
         msg.ParseFromString(raw_bytes)
         return msg
+
+    def get_entity_fields(self, feed_entity) -> dict:
+        """Return a dict of populated field names on a FeedEntity using ListFields() reflection.
+        Keys are field names, values are the field descriptors."""
+        return {descriptor.name: value for descriptor, value in feed_entity.ListFields()}
