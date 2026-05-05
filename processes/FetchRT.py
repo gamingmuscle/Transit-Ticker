@@ -9,6 +9,7 @@ from handlers.RequestHandler import RequestHandler
 from handlers.tokenHandler import tokenHandler
 from handlers.ProtoHandler import ProtoHandler
 from handlers.DBHandler import DBHandler
+from handlers.RTHandler import RTHandler
 
 def run():
     config = ConfigHandler("../config/RT.json")
@@ -31,6 +32,7 @@ def run():
         print(f"[ERROR] Failed to connect to database: {e}")
         return
 
+    rt = RTHandler(db)
     req = RequestHandler()
     th = tokenHandler()
     ph = ProtoHandler()
@@ -42,7 +44,7 @@ def run():
         return
 
     for entry in config.get("ingress"):
-        authority_id = db.get_or_create_authority(entry["authority"], entry["url"])
+        authority_id = rt.get_or_create_authority(entry["authority"], entry["url"])
 
         token = th.load(entry["authority"])
         if not token:
@@ -73,10 +75,10 @@ def run():
                 print(f"[ERROR] Failed to parse proto for {data_entry['endpoint']}: {e}")
                 continue
 
-            fetch_id = db.log_fetch(authority_id, data_entry["endpoint"], data_entry["entity"], parsed)
+            fetch_id = rt.log_fetch(authority_id, data_entry["endpoint"], data_entry["entity"], parsed)
 
             try:
-                db.insert_entities(authority_id, fetch_id, parsed)
+                rt.insert_entities(authority_id, fetch_id, parsed)
                 print(f"[INFO] Inserted {len(parsed.entity)} {data_entry['entity']} entities for {entry['authority']}")
             except Exception as e:
                 print(f"[ERROR] DB insert failed for {data_entry['endpoint']}: {e}")

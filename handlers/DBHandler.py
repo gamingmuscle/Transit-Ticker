@@ -48,12 +48,14 @@ class DBHandler:
     # ------------------------------------------------------------------
 
     def bulk_insert(self, table: str, columns: list[str],
-                    rows, batch_size: int = 1000) -> int:
+                    rows, batch_size: int = 1000, replace: bool = False) -> int:
         """Insert an iterable of row tuples into table in batches.
+        Set replace=True to use REPLACE INTO (upsert by primary key).
         Returns total rows inserted."""
         col_names    = ', '.join(columns)
         placeholders = ', '.join(['%s'] * len(columns))
-        sql = f"INSERT INTO {table} ({col_names}) VALUES ({placeholders})"
+        verb = "REPLACE INTO" if replace else "INSERT INTO"
+        sql = f"{verb} {table} ({col_names}) VALUES ({placeholders})"
 
         batch = []
         count = 0
