@@ -82,6 +82,13 @@ def run():
                 print(f"[INFO] Inserted {len(parsed.entity)} {data_entry['entity']} entities for {entry['authority']}")
             except Exception as e:
                 print(f"[ERROR] DB insert failed for {data_entry['endpoint']}: {e}")
+                continue
+
+        try:
+            rt.refresh_live_eta(authority_id)
+            print(f"[INFO] Refreshed live_eta for {entry['authority']}")
+        except Exception as e:
+            print(f"[ERROR] live_eta refresh failed for {entry['authority']}: {e}")
 
     db.close()
 

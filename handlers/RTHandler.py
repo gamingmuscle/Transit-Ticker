@@ -213,6 +213,152 @@ class RTHandler:
             )
 
     # ------------------------------------------------------------------
+    # Live ETA refresh
+    # ------------------------------------------------------------------
+
+    def refresh_live_eta(self, authority_id: int):
+        """Upsert live_eta rows for all active trips under authority_id, then prune stale rows."""
+        self.db.execute(
+            """
+            INSERT INTO live_eta (
+                authority_id, trip_update_id,
+                trip_id, route_id, route_short_name, route_long_name,
+                trip_headsign, direction_id, start_date,
+                vehicle_id, vehicle_label, trip_schedule_relationship,
+                stop_sequence, stop_id, stop_name,
+                scheduled_arrival, eta, eta_source, delay_seconds,
+                stop_schedule_relationship,
+                vehicle_current_status, vehicle_lat, vehicle_lon,
+                vehicle_bearing, vehicle_speed, occupancy_status
+            )
+            SELECT
+                tu.authority_id,
+                tu.id,
+                tu.trip_id,
+                COALESCE(tu.route_id, t.route_id),
+                r.route_short_name,
+                r.route_long_name,
+                t.trip_headsign,
+                COALESCE(tu.direction_id, t.direction_id),
+                tu.start_date,
+                tu.vehicle_id,
+                tu.vehicle_label,
+                tu.schedule_relationship,
+
+                stu.stop_sequence,
+                COALESCE(stu.stop_id, st.stop_id),
+                s.stop_name,
+
+                -- scheduled_arrival: GTFS HH:MM:SS may exceed 23h — parse via SUBSTRING_INDEX
+                DATE_ADD(
+                    STR_TO_DATE(tu.start_date, '%%Y%%m%%d'),
+                    INTERVAL (
+                        CAST(SUBSTRING_INDEX(st.arrival_time, ':', 1) AS UNSIGNED) * 3600
+                        + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(st.arrival_time, ':', 2), ':', -1) AS UNSIGNED) * 60
+                        + CAST(SUBSTRING_INDEX(st.arrival_time, ':', -1) AS UNSIGNED)
+                    ) SECOND
+                ),
+
+                CASE
+                    WHEN stu.arrival_time IS NOT NULL
+                        THEN FROM_UNIXTIME(stu.arrival_time)
+                    WHEN stu.arrival_delay IS NOT NULL AND st.arrival_time IS NOT NULL
+                        THEN DATE_ADD(
+                            STR_TO_DATE(tu.start_date, '%%Y%%m%%d'),
+                            INTERVAL (
+                                CAST(SUBSTRING_INDEX(st.arrival_time, ':', 1) AS UNSIGNED) * 3600
+                                + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(st.arrival_time, ':', 2), ':', -1) AS UNSIGNED) * 60
+                                + CAST(SUBSTRING_INDEX(st.arrival_time, ':', -1) AS UNSIGNED)
+                                + stu.arrival_delay
+                            ) SECOND
+                        )
+                    WHEN tu.delay IS NOT NULL AND st.arrival_time IS NOT NULL
+                        THEN DATE_ADD(
+                            STR_TO_DATE(tu.start_date, '%%Y%%m%%d'),
+                            INTERVAL (
+                                CAST(SUBSTRING_INDEX(st.arrival_time, ':', 1) AS UNSIGNED) * 3600
+                                + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(st.arrival_time, ':', 2), ':', -1) AS UNSIGNED) * 60
+                                + CAST(SUBSTRING_INDEX(st.arrival_time, ':', -1) AS UNSIGNED)
+                                + tu.delay
+                            ) SECOND
+                        )
+                    ELSE
+                        DATE_ADD(
+                            STR_TO_DATE(tu.start_date, '%%Y%%m%%d'),
+                            INTERVAL (
+                                CAST(SUBSTRING_INDEX(st.arrival_time, ':', 1) AS UNSIGNED) * 3600
+                                + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(st.arrival_time, ':', 2), ':', -1) AS UNSIGNED) * 60
+                                + CAST(SUBSTRING_INDEX(st.arrival_time, ':', -1) AS UNSIGNED)
+                            ) SECOND
+                        )
+                END,
+
+                CASE
+                    WHEN stu.arrival_time IS NOT NULL  THEN 'rt_time'
+                    WHEN stu.arrival_delay IS NOT NULL THEN 'rt_delay'
+                    WHEN tu.delay IS NOT NULL          THEN 'trip_delay'
+                    ELSE                                    'scheduled'
+                END,
+
+                COALESCE(stu.arrival_delay, tu.delay),
+                stu.schedule_relationship,
+
+                vp.current_status,
+                vp.latitude,
+                vp.longitude,
+                vp.bearing,
+                vp.speed,
+                vp.occupancy_status
+
+            FROM trip_updates tu
+            LEFT JOIN trips t
+                ON t.trip_id = tu.trip_id
+            LEFT JOIN routes r
+                ON r.route_id = COALESCE(tu.route_id, t.route_id)
+            JOIN stop_time_updates stu
+                ON stu.trip_update_id = tu.id
+            LEFT JOIN stop_times st
+                ON st.trip_id = tu.trip_id AND st.stop_sequence = stu.stop_sequence
+            LEFT JOIN stops s
+                ON s.stop_id = COALESCE(stu.stop_id, st.stop_id)
+            LEFT JOIN vehicle_positions vp
+                ON vp.trip_id = tu.trip_id AND vp.authority_id = tu.authority_id
+            WHERE tu.authority_id = %s
+              AND tu.schedule_relationship NOT IN (3, 7)
+              AND (stu.schedule_relationship IS NULL OR stu.schedule_relationship != 1)
+            ON DUPLICATE KEY UPDATE
+                route_id                   = VALUES(route_id),
+                route_short_name           = VALUES(route_short_name),
+                route_long_name            = VALUES(route_long_name),
+                trip_headsign              = VALUES(trip_headsign),
+                direction_id               = VALUES(direction_id),
+                vehicle_id                 = VALUES(vehicle_id),
+                vehicle_label              = VALUES(vehicle_label),
+                trip_schedule_relationship = VALUES(trip_schedule_relationship),
+                stop_id                    = VALUES(stop_id),
+                stop_name                  = VALUES(stop_name),
+                scheduled_arrival          = VALUES(scheduled_arrival),
+                eta                        = VALUES(eta),
+                eta_source                 = VALUES(eta_source),
+                delay_seconds              = VALUES(delay_seconds),
+                stop_schedule_relationship = VALUES(stop_schedule_relationship),
+                vehicle_current_status     = VALUES(vehicle_current_status),
+                vehicle_lat                = VALUES(vehicle_lat),
+                vehicle_lon                = VALUES(vehicle_lon),
+                vehicle_bearing            = VALUES(vehicle_bearing),
+                vehicle_speed              = VALUES(vehicle_speed),
+                occupancy_status           = VALUES(occupancy_status),
+                refreshed_at               = CURRENT_TIMESTAMP
+            """,
+            (authority_id,),
+        )
+        self.db.execute(
+            "DELETE FROM live_eta WHERE eta < NOW() - INTERVAL 5 MINUTE AND authority_id = %s",
+            (authority_id,),
+        )
+        self.db.commit()
+
+    # ------------------------------------------------------------------
     # Alerts
     # ------------------------------------------------------------------
 

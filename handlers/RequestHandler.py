@@ -1,4 +1,5 @@
 import json
+import os
 import requests
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -40,8 +41,8 @@ class RequestHandler:
                 entry["authentication"]["request"]["method"],
                 url,
                 files={
-                    "username": (None, entry["authentication"]["request"]["username"]),
-                    "password": (None, entry["authentication"]["request"]["password"]),
+                    "username": (None, os.environ.get(entry["authentication"]["request"]["username"], "")),
+                    "password": (None, os.environ.get(entry["authentication"]["request"]["password"], "")),
                 },
                 headers=entry["authentication"]["request"]["headers"],
             )

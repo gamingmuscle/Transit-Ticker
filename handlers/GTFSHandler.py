@@ -51,10 +51,10 @@ class GTFSHandler:
         'trips.txt': {
             'table': 'trips',
             'columns': [
-                'route_id', 'service_id', 'trip_id', 'trip_headsign', 'trip_short_name',
+                'route_id', 'agency_id', 'service_id', 'trip_id', 'trip_headsign', 'trip_short_name',
                 'direction_id', 'block_id', 'shape_id', 'wheelchair_accessible', 'bikes_allowed',
             ],
-            'inject_agency_id': False,
+            'inject_agency_id': True,
         },
         'stop_times.txt': {
             'table': 'stop_times',

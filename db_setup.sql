@@ -6,6 +6,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ============================================================
 -- RT TABLES (drop first, reverse dependency order)
 -- ============================================================
+DROP TABLE IF EXISTS live_eta;
 DROP TABLE IF EXISTS alert_translations;
 DROP TABLE IF EXISTS alert_informed_entities;
 DROP TABLE IF EXISTS alert_active_periods;
@@ -100,6 +101,7 @@ CREATE TABLE calendar_dates (
 
 CREATE TABLE trips (
     route_id              VARCHAR(64) NOT NULL,
+    agency_id             VARCHAR(64) NOT NULL,
     service_id            VARCHAR(64) NOT NULL,
     trip_id               VARCHAR(64) PRIMARY KEY,
     trip_headsign         VARCHAR(255),
@@ -109,7 +111,7 @@ CREATE TABLE trips (
     shape_id              VARCHAR(64),
     wheelchair_accessible TINYINT,
     bikes_allowed         TINYINT,
-    FOREIGN KEY (route_id) REFERENCES routes(route_id)
+    FOREIGN KEY (route_id, agency_id) REFERENCES routes(route_id, agency_id)
 );
 
 CREATE TABLE stop_times (
@@ -348,6 +350,54 @@ CREATE TABLE alert_translations (
     image_media_type VARCHAR(64),
     FOREIGN KEY (alert_id)     REFERENCES alerts(id) ON DELETE CASCADE,
     FOREIGN KEY (authority_id) REFERENCES rt_authorities(id)
+);
+
+-- ============================================================
+-- LIVE ETA (materialized, refreshed after each RT poll)
+-- ============================================================
+
+CREATE TABLE live_eta (
+    id                         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    authority_id               INT UNSIGNED NOT NULL,
+    trip_update_id             INT UNSIGNED NOT NULL,
+
+    trip_id                    VARCHAR(64),
+    route_id                   VARCHAR(64),
+    route_short_name           VARCHAR(64),
+    route_long_name            VARCHAR(255),
+    trip_headsign              VARCHAR(255),
+    direction_id               TINYINT,
+    start_date                 CHAR(8),
+    vehicle_id                 VARCHAR(64),
+    vehicle_label              VARCHAR(255),
+    trip_schedule_relationship TINYINT  COMMENT '0=SCHEDULED,1=ADDED,2=UNSCHEDULED,3=CANCELED',
+
+    stop_sequence              INT UNSIGNED,
+    stop_id                    VARCHAR(64) NOT NULL,
+    stop_name                  VARCHAR(255),
+
+    scheduled_arrival          DATETIME,
+    eta                        DATETIME,
+    eta_source                 ENUM('rt_time','rt_delay','trip_delay','scheduled') NOT NULL DEFAULT 'scheduled',
+    delay_seconds              INT,
+    stop_schedule_relationship TINYINT  COMMENT '0=SCHEDULED,1=SKIPPED,2=NO_DATA,3=UNSCHEDULED',
+
+    -- denormalized from vehicle_positions for fast ticker reads
+    vehicle_current_status     TINYINT  COMMENT '0=INCOMING_AT,1=STOPPED_AT,2=IN_TRANSIT_TO',
+    vehicle_lat                DECIMAL(10,7),
+    vehicle_lon                DECIMAL(10,7),
+    vehicle_bearing            FLOAT,
+    vehicle_speed              FLOAT,
+    occupancy_status           TINYINT  COMMENT '0=EMPTY,1=MANY_SEATS_AVAILABLE,2=FEW_SEATS_AVAILABLE,3=STANDING_ROOM_ONLY,4=CRUSHED_STANDING_ROOM_ONLY,5=FULL,6=NOT_ACCEPTING_PASSENGERS',
+
+    refreshed_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uq_trip_stop    (authority_id, trip_update_id, stop_sequence),
+    KEY idx_eta_stop           (stop_id, eta),
+    KEY idx_eta_route          (route_id, eta),
+    KEY idx_eta_trip           (trip_id, eta),
+    FOREIGN KEY (authority_id)   REFERENCES rt_authorities(id),
+    FOREIGN KEY (trip_update_id) REFERENCES trip_updates(id) ON DELETE CASCADE
 );
 
 -- ============================================================
