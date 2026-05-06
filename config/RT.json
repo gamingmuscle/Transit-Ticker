@@ -12,8 +12,8 @@
                 {
                     "method": "POST",
                     "params": {},
-                    "username": "tschlund",
-                    "password": "t-M3t@l2",
+                    "username": "njtransit_user",
+                    "password": "njtransit_pass",
                     "headers": {
                         "accept": "text/plain"
                     }
