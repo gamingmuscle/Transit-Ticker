@@ -9,4 +9,4 @@ COPY . /app
 RUN pip install -r requirements.txt
 
 # Run your daily job
-CMD ["python", "processes/FetchGTFS.py"]
+CMD ["python", "$JOB_SCRIPT"]
