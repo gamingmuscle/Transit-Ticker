@@ -16,18 +16,11 @@ def run():
     if not config.load():
         return
 
-    db_config = ConfigHandler("../config/DB.json")
-    if not db_config.load():
-        return
-
     try:
-        db = DBHandler(
-            host=db_config.get("host"),
-            port=db_config.get("port"),
-            user=db_config.get("user"),
-            password=db_config.get("password"),
-            database=db_config.get("database"),
-        )
+        db = DBHandler.from_env()
+    except KeyError as e:
+        print(f"[ERROR] Missing required environment variable: {e}")
+        return
     except Exception as e:
         print(f"[ERROR] Failed to connect to database: {e}")
         return
