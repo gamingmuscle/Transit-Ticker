@@ -1,9 +1,20 @@
+import os
 import mysql.connector
 
 
 class DBHandler:
     """Generic, reusable MySQL database utility.
     Contains no domain-specific SQL — all query logic lives in loader classes."""
+
+    @classmethod
+    def from_env(cls) -> "DBHandler":
+        return cls(
+            host=os.environ["DB_HOST"],
+            port=int(os.environ.get("DB_PORT", 3306)),
+            user=os.environ["DB_USER"],
+            password=os.environ["DB_PASSWORD"],
+            database=os.environ["DB_NAME"],
+        )
 
     def __init__(self, host: str, port: int, user: str, password: str, database: str):
         self.conn = mysql.connector.connect(
