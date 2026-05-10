@@ -4,3 +4,5 @@ config/DB.json
 data/protos/NJTRANSIT/VehiclePositions.proto
 data/protos/NJTRANSIT/TripUpdates.proto
 data/protos/NJTRANSIT/Alerts.proto
+handlers/__pycache__/RequestHandler.cpython-314.pyc
+handlers/__pycache__/RTHandler.cpython-314.pyc
