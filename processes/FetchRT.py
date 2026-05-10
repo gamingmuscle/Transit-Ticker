@@ -1,6 +1,10 @@
 from pathlib import Path
+import os
 import sys
-sys.path.append("..")
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+
 import importlib.util
 import json
 from datetime import datetime, timedelta, timezone
@@ -12,7 +16,7 @@ from handlers.DBHandler import DBHandler
 from handlers.RTHandler import RTHandler
 
 def run():
-    config = ConfigHandler("../config/RT.json")
+    config = ConfigHandler(os.path.join(_ROOT, "config", "RT.json"))
     if not config.load():
         return
 
@@ -30,7 +34,7 @@ def run():
     th = tokenHandler()
     ph = ProtoHandler()
 
-    module = ph.loadProtoClass("FeedMessage", "../objects/protos/")
+    module = ph.loadProtoClass("FeedMessage", os.path.join(_ROOT, "objects", "protos"))
     if not module:
         print("[ERROR] Failed to load protobuf module — aborting")
         db.close()

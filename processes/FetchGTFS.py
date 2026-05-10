@@ -1,6 +1,9 @@
 import zipfile
+import os
 import sys
-sys.path.append("..")
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
 
 from handlers.ConfigHandler import ConfigHandler
 from handlers.RequestHandler import RequestHandler
@@ -9,7 +12,7 @@ from handlers.DBHandler import DBHandler
 
 
 def run():
-    config = ConfigHandler("../config/GTFS.json")
+    config = ConfigHandler(os.path.join(_ROOT, "config", "GTFS.json"))
     if not config.load():
         return
 
@@ -25,7 +28,7 @@ def run():
             print(f"[WARN] Failed to download file: {entry['file']}")
             continue
 
-        zip_path = f"../{entry['destDirectory']}{entry['destFile']}"
+        zip_path = os.path.join(_ROOT, entry['destDirectory'], entry['destFile'])
         print(f"Downloaded {entry['file']} — loading into DB...")
         load_zip(db, zip_path, entry["agency_id"])
 
