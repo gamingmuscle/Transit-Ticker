@@ -105,7 +105,7 @@ class RequestHandler:
             r.raise_for_status()
             with open(f"{outdir}/{entry['destFile']}.{entry['format']}", "wb") as f:
                 f.write(r.content)
-            print(f"[DEBUG] File saved: {outdir}/{entry['destFile']}.{entry["format"]}")
+            print(f"[DEBUG] File saved: {outdir}/{entry['destFile']}.{entry['format']}")
             return r.content
         except requests.exceptions.HTTPError as e:
             print("HTTP error:", e, "Status:", e.response.status_code)
