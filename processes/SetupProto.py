@@ -1,7 +1,10 @@
+import os
 import requests
 import json
 from pathlib import Path
 from datetime import datetime, timezone
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def CheckProto(proto:str, destDir:str) -> bool:
@@ -53,9 +56,10 @@ def DownloadSchema(dest_dir:str) -> bool:
         return False
         
 def run():
-    if not CheckProto("gtfs-realtime", "../objects/protos/"):
-        DownloadSchema("../objects/protos/")
-        if not GenerateProtoClass("gtfs-realtime", "../objects/protos/"):
+    protos_dir = os.path.join(_ROOT, "objects", "protos")
+    if not CheckProto("gtfs-realtime", protos_dir):
+        DownloadSchema(protos_dir)
+        if not GenerateProtoClass("gtfs-realtime", protos_dir):
             print("[ERROR] Failed to generate protobuf class. Exiting.")
             return
 
