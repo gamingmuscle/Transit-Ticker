@@ -9,4 +9,7 @@ COPY . /app
 RUN pip install -r requirements.txt
 
 # Run your daily job
-CMD ["python", "$JOB_SCRIPT"]
+#CMD ["python", "$JOB_SCRIPT"]
+
+# Run your daily job (expanded by shell)
+CMD ["sh", "-c", "python $JOB_SCRIPT"]
