@@ -215,6 +215,11 @@ class RTHandler:
     # ------------------------------------------------------------------
     # Live ETA refresh
     # ------------------------------------------------------------------
+    # This complex query joins the latest trip updates with static GTFS 
+    # data to compute real-time ETAs for all active trips, then upserts 
+    # into live_eta and prunes stale rows. By doing this in SQL, we 
+    # leverage the database's set-based operations for efficiency and 
+    # ensure consistency in the face of concurrent updates.
 
     def refresh_live_eta(self, authority_id: int):
         """Upsert live_eta rows for all active trips under authority_id, then prune stale rows."""
