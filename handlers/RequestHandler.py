@@ -103,7 +103,7 @@ class RequestHandler:
                 allow_redirects=False,
             )
             r.raise_for_status()
-            with open(f"{outdir}/{entry['destFile']}.{entry["format"]}", "wb") as f:
+            with open(f"{outdir}/{entry['destFile']}.{entry['format']}", "wb") as f:
                 f.write(r.content)
             print(f"[DEBUG] File saved: {outdir}/{entry['destFile']}.{entry["format"]}")
             return r.content
