@@ -215,6 +215,11 @@ class RTHandler:
     # ------------------------------------------------------------------
     # Live ETA refresh
     # ------------------------------------------------------------------
+    # This complex query joins the latest trip updates with static GTFS 
+    # data to compute real-time ETAs for all active trips, then upserts 
+    # into live_eta and prunes stale rows. By doing this in SQL, we 
+    # leverage the database's set-based operations for efficiency and 
+    # ensure consistency in the face of concurrent updates.
 
     def refresh_live_eta(self, authority_id: int):
         """Upsert live_eta rows for all active trips under authority_id, then prune stale rows."""
@@ -251,7 +256,7 @@ class RTHandler:
 
                 -- scheduled_arrival: GTFS HH:MM:SS may exceed 23h — parse via SUBSTRING_INDEX
                 DATE_ADD(
-                    STR_TO_DATE(tu.start_date, '%%Y%%m%%d'),
+                    CAST(tu.start_date AS DATE),
                     INTERVAL (
                         CAST(SUBSTRING_INDEX(st.arrival_time, ':', 1) AS UNSIGNED) * 3600
                         + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(st.arrival_time, ':', 2), ':', -1) AS UNSIGNED) * 60
@@ -264,7 +269,7 @@ class RTHandler:
                         THEN FROM_UNIXTIME(stu.arrival_time)
                     WHEN stu.arrival_delay IS NOT NULL AND st.arrival_time IS NOT NULL
                         THEN DATE_ADD(
-                            STR_TO_DATE(tu.start_date, '%%Y%%m%%d'),
+                            CAST(tu.start_date AS DATE),
                             INTERVAL (
                                 CAST(SUBSTRING_INDEX(st.arrival_time, ':', 1) AS UNSIGNED) * 3600
                                 + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(st.arrival_time, ':', 2), ':', -1) AS UNSIGNED) * 60
@@ -274,7 +279,7 @@ class RTHandler:
                         )
                     WHEN tu.delay IS NOT NULL AND st.arrival_time IS NOT NULL
                         THEN DATE_ADD(
-                            STR_TO_DATE(tu.start_date, '%%Y%%m%%d'),
+                            CAST(tu.start_date AS DATE),
                             INTERVAL (
                                 CAST(SUBSTRING_INDEX(st.arrival_time, ':', 1) AS UNSIGNED) * 3600
                                 + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(st.arrival_time, ':', 2), ':', -1) AS UNSIGNED) * 60
@@ -284,7 +289,7 @@ class RTHandler:
                         )
                     ELSE
                         DATE_ADD(
-                            STR_TO_DATE(tu.start_date, '%%Y%%m%%d'),
+                            CAST(tu.start_date AS DATE),
                             INTERVAL (
                                 CAST(SUBSTRING_INDEX(st.arrival_time, ':', 1) AS UNSIGNED) * 3600
                                 + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(st.arrival_time, ':', 2), ':', -1) AS UNSIGNED) * 60
